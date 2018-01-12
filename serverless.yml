@@ -1,0 +1,61 @@
+
+service: ca-iam
+
+provider:
+  name: aws
+  endpointType: REGIONAL
+#  runtime: nodejs6.10
+
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "iam:CreateRole"
+        - "iam:PutRolePolicy"
+        - "iam:AttachRolePolicy"
+      Resource: "*"
+
+functions:
+  create_cross_account_role:
+    handler: create_role_handler.create_cross_account_role
+    timeout: 30
+    events:
+      - http:
+          path: role/create
+          method: post
+          cors: true
+          authorizer:
+            type: aws_iam
+          integration: lambda
+          request:
+            passThrough: NEVER
+  attach_inline_policy_to_role:
+    handler: attach_inline_policy_handler.attach_policy
+    timeout: 30
+    events:
+      - http:
+          path: role/policy/inline/attach
+          method: post
+          cors: true
+          authorizer:
+            type: aws_iam
+          integration: lambda
+          request:
+            passThrough: NEVER
+  attach_policy_to_role:
+    handler: attach_policy_handler.attach_policy
+    timeout: 30
+    events:
+      - http:
+          path: role/policy/attach
+          method: post
+          cors: true
+          authorizer:
+            type: aws_iam
+          integration: lambda
+          request:
+            passThrough: NEVER

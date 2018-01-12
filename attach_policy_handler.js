@@ -2,6 +2,7 @@
 
 module.exports.attach_policy = (event, context, callback) => {
 
+  var payload = event.body;
   var AWS = require('aws-sdk');
   //Create IAM Service Object
   var iam = new AWS.IAM({apiversion : '2010-05-08'});
@@ -14,13 +15,16 @@ module.exports.attach_policy = (event, context, callback) => {
   var trust_account = event.trust_account;
   var target_account = event.target_account;
 
-  var responseCode = 200;
-  var responseStr;
+  const response = (statusCode, message) => ({
+    statusCode: statusCode,
+    body: { message: message,
+            input: payload }
+  });
 
 
   var policy_params = {
     PolicyArn: "",
-    RoleName: event.ticket_id
+    RoleName: ticket_id
   };
 
   //Attach policy
@@ -29,28 +33,12 @@ module.exports.attach_policy = (event, context, callback) => {
 
     iam.attachRolePolicy(policy_params, function(err,data){
       if(err){
-        responseStr = err.stack;
-        console.log(err,err.stack);
-        responseCode = 500;
+        callback(null, response(500, err.stack));
       }else{
-        responseStr =  data;
-        responseCode = 200;
-        console.log("policy successfully added");
-        console.log("Success :",responseStr);
+        callback(null, response(200, data));
       }
     });
 
   });
-
-
-  const response = {
-    statusCode: responseCode,
-    body: JSON.stringify({
-      message: responseStr,
-      input: event
-    }),
-  };
-
-  callback(null, response);
 
 };

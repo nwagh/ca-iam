@@ -2,22 +2,27 @@
 
 module.exports.create_cross_account_role = (event, context, callback) => {
 
+  var payload = event.body;
   var AWS = require('aws-sdk');
   //Create IAM Service Object
   var iam = new AWS.IAM({apiversion : '2010-05-08'});
   //Parse Event attributes
-  var principal = event.principal;
-  var fromTimestamp = event.fromTimestamp;
-  var toTimestamp = event.toTimestamp;
-  var ticket_id = event.ticket_id;
-  var policies = event.policies;
-  var trust_account = event.trust_account;
-  var target_account = event.target_account;
 
-  var responseCode = 500;
-  var responseStr;
+  var principal = payload.principal;
+  var fromTimestamp = payload.fromTimestamp;
+  var toTimestamp = payload.toTimestamp;
+  var ticket_id = payload.ticket_id;
+  var policies = payload.policies;
+  var trust_account = payload.trust_account;
+  var target_account = payload.target_account;
 
-  var arn = "arn:aws:iam::" + event.trust_account + ":root";
+  const response = (statusCode, message) => ({
+    statusCode: statusCode,
+    body: { message: message,
+            input: payload }
+  });
+
+  var arn = "arn:aws:iam::" + payload.trust_account + ":root";
 
 
   var cross_account_trust = {
@@ -43,29 +48,22 @@ module.exports.create_cross_account_role = (event, context, callback) => {
 
   var role_params = {
     AssumeRolePolicyDocument : JSON.stringify(cross_account_trust),
-    Path: "/",
-    RoleName: event.ticket_id
+    Path : "/",
+    RoleName : payload.ticket_id
   };
+
+  console.log("role_params :" + role_params.RoleName);
 
   //Create new Role for Ticket
   iam.createRole(role_params,function(err,data){
     if(err){
-      responseStr =  err.stack;
-      console.log(err,err.stack);
+      callback(null, response(500, err.stack));
+
     }else{
-      responseCode = 200;
-      console.log("Success :",data);
+      callback(null, response(200, data));
     }
   });
 
-  const response = {
-    statusCode: responseCode,
-    body: JSON.stringify({
-      message: responseStr,
-      input: event
-    }),
-  };
 
-  callback(null, response);
 
 };

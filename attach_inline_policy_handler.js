@@ -2,22 +2,26 @@
 
 module.exports.attach_policy = (event, context, callback) => {
 
+  var payload = event.body;
   var AWS = require('aws-sdk');
   //Create IAM Service Object
   var iam = new AWS.IAM({apiversion : '2010-05-08'});
   //Parse Event attributes
-  var principal = event.principal;
-  var fromTimestamp = event.fromTimestamp;
-  var toTimestamp = event.toTimestamp;
-  var ticket_id = event.ticket_id;
-  var policies = event.policies;
-  var trust_account = event.trust_account;
-  var target_account = event.target_account;
+  var principal = payload.principal;
+  var fromTimestamp = payload.fromTimestamp;
+  var toTimestamp = payload.toTimestamp;
+  var ticket_id = payload.ticket_id;
+  var policies = payload.policies;
+  var trust_account = payload.trust_account;
+  var target_account = payload.target_account;
 
-  var responseCode = 200;
-  var responseStr;
+  const response = (statusCode, message) => ({
+    statusCode: statusCode,
+    body: { message: message,
+            input: payload }
+  });
 
-  var arn = "arn:aws:iam::" + event.trust_account + ":root";
+  var arn = "arn:aws:iam::" + payload.trust_account + ":root";
 
   var inline_deny_policy = {
     "Statement": [
@@ -43,31 +47,17 @@ module.exports.attach_policy = (event, context, callback) => {
   var inline_policy_params = {
     PolicyDocument: JSON.stringify(inline_deny_policy),
     PolicyName: 'AWSRevokeOlderSessions',
-    RoleName: event.ticket_id
+    RoleName: ticket_id
   };
 
   //Attach policy
   iam.putRolePolicy(inline_policy_params, function(err,data){
     if(err){
-      responseStr = err.stack;
-      console.log(err,err.stack);
-      responseCode = 500;
+        callback(null, response(500, err.stack));
     }else{
-      responseStr =  data;
-      responseCode = 200;
-      console.log("Inline policy successfully added");
-      console.log("Success :",responseStr);
+        callback(null, response(200, data));
     }
   });
 
-  const response = {
-    statusCode: responseCode,
-    body: JSON.stringify({
-      message: responseStr,
-      input: event
-    }),
-  };
-
-  callback(null, response);
 
 };

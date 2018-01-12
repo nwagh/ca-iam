@@ -11,17 +11,12 @@ module.exports.attach_policy = (event, context, callback) => {
   var fromTimestamp = payload.fromTimestamp;
   var toTimestamp = payload.toTimestamp;
   var ticket_id = payload.ticket_id;
-  var policies = payload.policies;
-  var trust_account = payload.trust_account;
-  var target_account = payload.target_account;
 
   const response = (statusCode, message) => ({
     statusCode: statusCode,
     body: { message: message,
             input: payload }
   });
-
-  var arn = "arn:aws:iam::" + payload.trust_account + ":root";
 
   var inline_deny_policy = {
     "Statement": [

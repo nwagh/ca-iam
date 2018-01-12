@@ -12,7 +12,6 @@ module.exports.create_cross_account_role = (event, context, callback) => {
   var fromTimestamp = payload.fromTimestamp;
   var toTimestamp = payload.toTimestamp;
   var ticket_id = payload.ticket_id;
-  var policies = payload.policies;
   var trust_account = payload.trust_account;
   var target_account = payload.target_account;
 
